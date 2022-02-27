@@ -1,6 +1,6 @@
 # dice
 
-The NP starter kit describes how to launch a NP RApp in minutes. Quickstart assumes that the local development environment for Reach has been setup.
+Alice loads the dice with 6 NFTs in order. Each roll will release 1 NFT to the roller. Variant rules apply.
 
 ## quickstart
 
@@ -9,8 +9,10 @@ commands
 git clone git@github.com:ZestBloom/dice.git
 cd dice
 source np.sh 
-np
+run
 ```
+
+*requires devnet*
 
 output
 ```json
