@@ -1,13 +1,13 @@
 "reach 0.1";
-"use strict";
+//"use strict";
 
-import { requireTok6 } from "./util.rsh";
+import { requireTok7, hasSignal } from "util.rsh";
 
 // -----------------------------------------------
 // Name: Interface Template
 // Description: NP Rapp simple
 // Author: Nicholas Shellabarger
-// Version: 0.0.2 - use 6 tokens
+// Version: 0.0.3 - use 6 tokens +1
 // Requires Reach v0.1.7 (stable)
 // ----------------------------------------------
 export const Participants = () => [
@@ -15,11 +15,13 @@ export const Participants = () => [
     getParams: Fun(
       [],
       Object({
-        tokens: Array(Token, 6),
+        tokens: Array(Token, 7),
       })
     ),
   }),
-  Participant("Bob", {})
+  Participant("Relay", {
+    ...hasSignal,
+  }),
 ];
 export const Views = () => [];
 export const Api = () => [
@@ -28,10 +30,10 @@ export const Api = () => [
   }),
 ];
 export const App = (map) => {
-  const [[Alice, Bob], _, [a]] = map;
+  const [[Alice, Relay], _, [a]] = map;
   const {
-    tokens: [tok0, tok1, tok2, tok3, tok4, tok5],
-  } = requireTok6(Alice);
+    tokens: [tok0, tok1, tok2, tok3, tok4, tok5, tok6],
+  } = requireTok7(Alice);
   Alice.pay([
     0,
     [1, tok0],
@@ -44,58 +46,130 @@ export const App = (map) => {
   const bs = lastConsensusTime() % 6;
   const [as] = parallelReduce([0])
     .invariant(balance() >= 0)
-    .while(as <= 6)
+    .while(as < 6)
     .api(
       a.touch,
       () => assume(true),
-      () => 0,
+      () => [0, [1, tok6]],
       (k) => {
-        require(true)
-        k(null)
-        if(as + bs == 0 + 7 * 0) transfer(balance(tok0), tok0).to(this);
-        else if(as + bs == 1 + 7 * 0) transfer(balance(tok1), tok1).to(this);
-        else if(as + bs == 2 + 7 * 0) transfer(balance(tok4), tok4).to(this);
-        else if(as + bs == 3 + 7 * 0) transfer(balance(tok5), tok5).to(this);
-        else if(as + bs == 4 + 7 * 0) transfer(balance(tok3), tok3).to(this);
-        else if(as + bs == 5 + 7 * 0) transfer(balance(tok2), tok2).to(this);
-        else if(as + bs == 0 + 7 * 1) transfer(balance(tok1), tok1).to(this);
-        else if(as + bs == 1 + 7 * 1) transfer(balance(tok4), tok4).to(this);
-        else if(as + bs == 2 + 7 * 1) transfer(balance(tok3), tok3).to(this);
-        else if(as + bs == 3 + 7 * 1) transfer(balance(tok0), tok0).to(this);
-        else if(as + bs == 4 + 7 * 1) transfer(balance(tok2), tok2).to(this);
-        else if(as + bs == 5 + 7 * 1) transfer(balance(tok5), tok5).to(this);
-        else if(as + bs == 0 + 7 * 2) transfer(balance(tok2), tok2).to(this);
-        else if(as + bs == 1 + 7 * 2) transfer(balance(tok5), tok5).to(this);
-        else if(as + bs == 2 + 7 * 2) transfer(balance(tok3), tok3).to(this);
-        else if(as + bs == 3 + 7 * 2) transfer(balance(tok0), tok0).to(this);
-        else if(as + bs == 4 + 7 * 2) transfer(balance(tok4), tok4).to(this);
-        else if(as + bs == 5 + 7 * 2) transfer(balance(tok1), tok1).to(this);
-        else if(as + bs == 0 + 7 * 3) transfer(balance(tok2), tok2).to(this);
-        else if(as + bs == 1 + 7 * 3) transfer(balance(tok3), tok3).to(this);
-        else if(as + bs == 2 + 7 * 3) transfer(balance(tok0), tok0).to(this);
-        else if(as + bs == 3 + 7 * 3) transfer(balance(tok1), tok1).to(this);
-        else if(as + bs == 4 + 7 * 3) transfer(balance(tok5), tok5).to(this);
-        else if(as + bs == 5 + 7 * 3) transfer(balance(tok4), tok4).to(this);
-        else if(as + bs == 0 + 7 * 4) transfer(balance(tok3), tok3).to(this);
-        else if(as + bs == 1 + 7 * 4) transfer(balance(tok1), tok1).to(this);
-        else if(as + bs == 2 + 7 * 4) transfer(balance(tok4), tok4).to(this);
-        else if(as + bs == 3 + 7 * 4) transfer(balance(tok2), tok2).to(this);
-        else if(as + bs == 4 + 7 * 4) transfer(balance(tok0), tok0).to(this);
-        else if(as + bs == 5 + 7 * 4) transfer(balance(tok5), tok5).to(this);
-        else if(as + bs == 0 + 7 * 5) transfer(balance(tok2), tok2).to(this);
-        else if(as + bs == 1 + 7 * 5) transfer(balance(tok1), tok1).to(this);
-        else if(as + bs == 2 + 7 * 5) transfer(balance(tok5), tok5).to(this);
-        else if(as + bs == 3 + 7 * 5) transfer(balance(tok4), tok4).to(this);
-        else if(as + bs == 4 + 7 * 5) transfer(balance(tok0), tok0).to(this);
-        else if(as + bs == 5 + 7 * 5) transfer(balance(tok3), tok3).to(this);
-        return [
-          as + 1,
-        ]
+        require(true);
+        k(null);
+        if (as + bs == 0 + 7 * 0) {
+          transfer(balance(tok1), tok1).to(this);
+          transfer(1, tok6).to(Alice);
+        } else if (as + bs == 1 + 7 * 0) {
+          transfer(balance(tok5), tok5).to(this);
+          transfer(1, tok6).to(Alice);
+        } else if (as + bs == 2 + 7 * 0) {
+          transfer(balance(tok3), tok3).to(this);
+          transfer(1, tok6).to(Alice);
+        } else if (as + bs == 3 + 7 * 0) {
+          transfer(balance(tok4), tok4).to(this);
+          transfer(1, tok6).to(Alice);
+        } else if (as + bs == 4 + 7 * 0) {
+          transfer(balance(tok2), tok2).to(this);
+          transfer(1, tok6).to(Alice);
+        } else if (as + bs == 5 + 7 * 0) {
+          transfer(balance(tok0), tok0).to(this);
+          transfer(1, tok6).to(Alice);
+        } else if (as + bs == 0 + 7 * 1) {
+          transfer(balance(tok2), tok2).to(this);
+          transfer(1, tok6).to(Alice);
+        } else if (as + bs == 1 + 7 * 1) {
+          transfer(balance(tok4), tok4).to(this);
+          transfer(1, tok6).to(Alice);
+        } else if (as + bs == 2 + 7 * 1) {
+          transfer(balance(tok0), tok0).to(this);
+          transfer(1, tok6).to(Alice);
+        } else if (as + bs == 3 + 7 * 1) {
+          transfer(balance(tok5), tok5).to(this);
+          transfer(1, tok6).to(Alice);
+        } else if (as + bs == 4 + 7 * 1) {
+          transfer(balance(tok1), tok1).to(this);
+          transfer(1, tok6).to(Alice);
+        } else if (as + bs == 5 + 7 * 1) {
+          transfer(balance(tok3), tok3).to(this);
+          transfer(1, tok6).to(Alice);
+        } else if (as + bs == 0 + 7 * 2) {
+          transfer(balance(tok0), tok0).to(this);
+          transfer(1, tok6).to(Alice);
+        } else if (as + bs == 1 + 7 * 2) {
+          transfer(balance(tok3), tok3).to(this);
+          transfer(1, tok6).to(Alice);
+        } else if (as + bs == 2 + 7 * 2) {
+          transfer(balance(tok1), tok1).to(this);
+          transfer(1, tok6).to(Alice);
+        } else if (as + bs == 3 + 7 * 2) {
+          transfer(balance(tok2), tok2).to(this);
+          transfer(1, tok6).to(Alice);
+        } else if (as + bs == 4 + 7 * 2) {
+          transfer(balance(tok5), tok5).to(this);
+          transfer(1, tok6).to(Alice);
+        } else if (as + bs == 5 + 7 * 2) {
+          transfer(balance(tok4), tok4).to(this);
+          transfer(1, tok6).to(Alice);
+        } else if (as + bs == 0 + 7 * 3) {
+          transfer(balance(tok0), tok0).to(this);
+          transfer(1, tok6).to(Alice);
+        } else if (as + bs == 1 + 7 * 3) {
+          transfer(balance(tok2), tok2).to(this);
+          transfer(1, tok6).to(Alice);
+        } else if (as + bs == 2 + 7 * 3) {
+          transfer(balance(tok5), tok5).to(this);
+          transfer(1, tok6).to(Alice);
+        } else if (as + bs == 3 + 7 * 3) {
+          transfer(balance(tok3), tok3).to(this);
+          transfer(1, tok6).to(Alice);
+        } else if (as + bs == 4 + 7 * 3) {
+          transfer(balance(tok4), tok4).to(this);
+          transfer(1, tok6).to(Alice);
+        } else if (as + bs == 5 + 7 * 3) {
+          transfer(balance(tok1), tok1).to(this);
+          transfer(1, tok6).to(Alice);
+        } else if (as + bs == 0 + 7 * 4) {
+          transfer(balance(tok0), tok0).to(this);
+          transfer(1, tok6).to(Alice);
+        } else if (as + bs == 1 + 7 * 4) {
+          transfer(balance(tok3), tok3).to(this);
+          transfer(1, tok6).to(Alice);
+        } else if (as + bs == 2 + 7 * 4) {
+          transfer(balance(tok1), tok1).to(this);
+          transfer(1, tok6).to(Alice);
+        } else if (as + bs == 3 + 7 * 4) {
+          transfer(balance(tok4), tok4).to(this);
+          transfer(1, tok6).to(Alice);
+        } else if (as + bs == 4 + 7 * 4) {
+          transfer(balance(tok2), tok2).to(this);
+          transfer(1, tok6).to(Alice);
+        } else if (as + bs == 5 + 7 * 4) {
+          transfer(balance(tok5), tok5).to(this);
+          transfer(1, tok6).to(Alice);
+        } else if (as + bs == 0 + 7 * 5) {
+          transfer(balance(tok5), tok5).to(this);
+          transfer(1, tok6).to(Alice);
+        } else if (as + bs == 1 + 7 * 5) {
+          transfer(balance(tok1), tok1).to(this);
+          transfer(1, tok6).to(Alice);
+        } else if (as + bs == 2 + 7 * 5) {
+          transfer(balance(tok2), tok2).to(this);
+          transfer(1, tok6).to(Alice);
+        } else if (as + bs == 3 + 7 * 5) {
+          transfer(balance(tok0), tok0).to(this);
+          transfer(1, tok6).to(Alice);
+        } else if (as + bs == 4 + 7 * 5) {
+          transfer(balance(tok3), tok3).to(this);
+          transfer(1, tok6).to(Alice);
+        } else if (as + bs == 5 + 7 * 5) {
+          transfer(balance(tok4), tok4).to(this);
+          transfer(1, tok6).to(Alice);
+        }
+        return [as + 1];
       }
     )
     .timeout(false);
   commit();
-  Bob.publish();
+  Relay.publish();
+  Relay.only(() => interact.signal());
   transfer(balance()).to(Alice);
   transfer(balance(tok0), tok0).to(Alice);
   transfer(balance(tok1), tok1).to(Alice);
@@ -103,6 +177,7 @@ export const App = (map) => {
   transfer(balance(tok3), tok3).to(Alice);
   transfer(balance(tok4), tok4).to(Alice);
   transfer(balance(tok5), tok5).to(Alice);
+  transfer(balance(tok6), tok6).to(Alice);
   commit();
   exit();
 };

@@ -45,6 +45,13 @@ const [, , infile] = process.argv;
 
   const zorkmid = await launchToken(stdlib, accAlice, "zorkmid", "ZMD");
   const gil = await launchToken(stdlib, accBob, "gil", "GIL");
+  const tok0 = await launchToken(stdlib, accAlice, "tok0", "TOK0");
+  const tok1 = await launchToken(stdlib, accAlice, "tok1", "TOK1");
+  const tok2 = await launchToken(stdlib, accAlice, "tok2", "TOK2");
+  const tok3 = await launchToken(stdlib, accAlice, "tok3", "TOK3");
+  const tok4 = await launchToken(stdlib, accAlice, "tok4", "TOK4");
+  const tok5 = await launchToken(stdlib, accAlice, "tok5", "TOK5");
+  const tok6 = await launchToken(stdlib, accAlice, "tok6", "TOK6");
   await accAlice.tokenAccept(gil.id);
   await accBob.tokenAccept(zorkmid.id);
 
@@ -123,6 +130,110 @@ const [, , infile] = process.argv;
   assert.equal(diffBob, -1);
 
   await reset([accAlice, accBob]);
+
+  console.log("CAN ROLL ALL");
+  await (async (acc, acc2) => {
+    let addr = acc.networkAccount.addr;
+    let ctc = acc.contract(backend);
+    Promise.all([
+      backend.Constructor(ctc, {
+        getParams: () => getParams(addr),
+        signal,
+      }),
+    ]);
+    let appId = await ctc.getInfo();
+    console.log(appId);
+    let ctc2 = acc2.contract(backend, appId);
+    let ctc3 = acc.contract(backend, appId);
+
+    Promise.all([
+      backend.Contractee(ctc2, {}),
+      backend.Alice(ctc3, {
+        getParams: () => ({
+          tokens: [
+            tok0.id,
+            tok1.id,
+            tok2.id,
+            tok3.id,
+            tok4.id,
+            tok5.id,
+            tok6.id,
+          ],
+        }),
+      }),
+      backend.Relay(ctc2, {
+        signal: () => {
+          console.log("BOB");
+        },
+      }),
+    ]);
+    await stdlib.wait(100);
+    console.log("roll 1");
+    await ctc3.a.touch();
+    console.log("roll 2");
+    await ctc3.a.touch();
+    console.log("roll 3");
+    await ctc3.a.touch();
+    console.log("roll 4");
+    await ctc3.a.touch();
+    console.log("roll 5");
+    await ctc3.a.touch();
+    console.log("roll 6");
+    await ctc3.a.touch();
+  })(accAlice, accBob);
+  await stdlib.wait(100);
+
+  console.log("CAN ROLL NONE");
+  await (async (acc, acc2) => {
+    let addr = acc.networkAccount.addr;
+    let ctc = acc.contract(backend);
+    Promise.all([
+      backend.Constructor(ctc, {
+        getParams: () => getParams(addr),
+        signal,
+      }),
+    ]);
+    let appId = await ctc.getInfo();
+    console.log(appId);
+    let ctc2 = acc2.contract(backend, appId);
+    let ctc3 = acc.contract(backend, appId);
+
+    Promise.all([
+      backend.Contractee(ctc2, {}),
+      backend.Alice(ctc3, {
+        getParams: () => ({
+          tokens: [
+            tok0.id,
+            tok1.id,
+            tok2.id,
+            tok3.id,
+            tok4.id,
+            tok5.id,
+            tok6.id,
+          ],
+        }),
+      }),
+      backend.Relay(ctc2, {
+        signal: () => {
+          console.log("BOB");
+        },
+      }),
+    ]);
+    await stdlib.wait(100);
+    console.log("roll 1");
+    await ctc2.a.touch().catch(console.dir);
+    console.log("roll 2");
+    await ctc2.a.touch().catch(console.dir);
+    console.log("roll 3");
+    await ctc2.a.touch().catch(console.dir);
+    console.log("roll 4");
+    await ctc2.a.touch().catch(console.dir);
+    console.log("roll 5");
+    await ctc2.a.touch().catch(console.dir);
+    console.log("roll 6");
+    await ctc2.a.touch().catch(console.dir);
+  })(accAlice, accBob);
+  await stdlib.wait(100);
 
   process.exit();
 })();
