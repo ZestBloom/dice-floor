@@ -7,7 +7,7 @@ import { requireTok7, hasSignal } from "util.rsh";
 // Name: Interface Template
 // Description: NP Rapp simple
 // Author: Nicholas Shellabarger
-// Version: 0.0.4 - add view etc
+// Version: 0.0.5 - fix dice count + missing txn
 // Requires Reach v0.1.7 (stable)
 // ----------------------------------------------
 export const Participants = () => [
@@ -54,7 +54,7 @@ export const App = (map) => {
   v.remaining.set(6);
   v.tokens.set([tok0, tok1, tok2, tok3, tok4, tok5]);
   v.exchange.set(tok6);
-  const bs = lastConsensusTime() % 5;
+  const bs = lastConsensusTime() % 4;
   const [as, next] = parallelReduce([
     0,
     (() => {
@@ -88,6 +88,8 @@ export const App = (map) => {
           as + 1,
           (() => {
             if (as + bs == 0 + 7 * 0) {
+              transfer(balance(tok1), tok1).to(this);
+              transfer(1, tok6).to(Alice);
               return tok5;
             } else if (as + bs == 1 + 7 * 0) {
               transfer(balance(tok5), tok5).to(this);
