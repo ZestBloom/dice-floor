@@ -7,7 +7,7 @@ import { requireTok7, hasSignal } from "util.rsh";
 // Name: Interface Template
 // Description: NP Rapp simple
 // Author: Nicholas Shellabarger
-// Version: 0.0.6 - fix dice mapping
+// Version: 0.0.7 - add post deposit signal
 // Requires Reach v0.1.7 (stable)
 // ----------------------------------------------
 export const Participants = () => [
@@ -18,6 +18,7 @@ export const Participants = () => [
         tokens: Array(Token, 7), // 6 tokens + 1 exchange token
       })
     ),
+    ...hasSignal
   }),
   Participant("Bob", {
     ...hasSignal,
@@ -51,6 +52,7 @@ export const App = (map) => {
     [1, tok4],
     [1, tok5],
   ]);
+  Alice.interact.signal()
   v.remaining.set(6);
   v.tokens.set([tok0, tok1, tok2, tok3, tok4, tok5]);
   v.exchange.set(tok6);
