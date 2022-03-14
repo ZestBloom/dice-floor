@@ -18,6 +18,10 @@ const [, , infile] = process.argv;
     Array.from({ length: 10 }).map(() => stdlib.newTestAccount(startingBalance))
   );
 
+  const getExchange = async ctc => stdlib.bigNumberToNumber((await ctc.v.exchange())[1])
+  const getNext = async ctc => stdlib.bigNumberToNumber((await ctc.v.next())[1])
+  const getRemaining = async ctc => stdlib.bigNumberToNumber((await ctc.v.remaining())[1])
+
   const reset = async (accs) => {
     await Promise.all(accs.map(rebalance));
     await Promise.all(
@@ -160,30 +164,52 @@ const [, , infile] = process.argv;
             tok6.id,
           ],
         }),
+        ...stdlib.hasConsoleLogger
       }),
-      backend.Relay(ctc2, {
+      backend.Bob(ctc2, {
         signal: () => {
           console.log("BOB");
         },
       }),
     ]);
     await stdlib.wait(100);
+    console.log("exchange", await getExchange(ctc3));
+    console.log("next", await getNext(ctc3));
+    assert(await getExchange(ctc3) !== await getNext(ctc3), "next != exchange");
     console.log("roll 1");
+    console.log("remaining", await getRemaining(ctc3));
     await ctc3.a.touch();
+    await stdlib.wait(10);
     console.log("roll 2");
+    console.log("next", await getNext(ctc3));
+    console.log("remaining", await getRemaining(ctc3));
     await ctc3.a.touch();
+    await stdlib.wait(10);
     console.log("roll 3");
+    console.log("next", await getNext(ctc3));
+    console.log("remaining", await getRemaining(ctc3));
     await ctc3.a.touch();
+    await stdlib.wait(10);
     console.log("roll 4");
+    console.log("next", await getNext(ctc3));
+    console.log("remaining", await getRemaining(ctc3));
     await ctc3.a.touch();
+    await stdlib.wait(10);
     console.log("roll 5");
+    console.log("next", await getNext(ctc3));
+    console.log("remaining", await getRemaining(ctc3));
     await ctc3.a.touch();
+    await stdlib.wait(10);
     console.log("roll 6");
+    console.log("next", await getNext(ctc3));
+    console.log("remaining", await getRemaining(ctc3));
     await ctc3.a.touch();
+    await stdlib.wait(10);
   })(accAlice, accBob);
   await stdlib.wait(100);
 
   console.log("CAN ROLL NONE");
+  console.log("- BOB TRIES TO ROLL WITHOUT EXCHANGE TOKEN");
   await (async (acc, acc2) => {
     let addr = acc.networkAccount.addr;
     let ctc = acc.contract(backend);
@@ -213,7 +239,7 @@ const [, , infile] = process.argv;
           ],
         }),
       }),
-      backend.Relay(ctc2, {
+      backend.Bob(ctc2, {
         signal: () => {
           console.log("BOB");
         },
@@ -222,16 +248,7 @@ const [, , infile] = process.argv;
     await stdlib.wait(100);
     console.log("roll 1");
     await ctc2.a.touch().catch(console.dir);
-    console.log("roll 2");
-    await ctc2.a.touch().catch(console.dir);
-    console.log("roll 3");
-    await ctc2.a.touch().catch(console.dir);
-    console.log("roll 4");
-    await ctc2.a.touch().catch(console.dir);
-    console.log("roll 5");
-    await ctc2.a.touch().catch(console.dir);
-    console.log("roll 6");
-    await ctc2.a.touch().catch(console.dir);
+
   })(accAlice, accBob);
   await stdlib.wait(100);
 
