@@ -303,20 +303,10 @@ export const requireTok7 = (A) => {
     const {
       tokens: [tok0, tok1, tok2, tok3, tok4, tok5, tok6],
     } = declassify(interact.getParams());
-    assume(tok0 != tok1);
-    assume(tok0 != tok2);
-    assume(tok0 != tok3);
-    assume(tok0 != tok4);
-    assume(tok0 != tok5);
-    assume(tok0 != tok6);
+    assume(distinct(tok0, tok1, tok2, tok3, tok4, tok5, tok6))
   });
   A.publish(tok0, tok1, tok2, tok3, tok4, tok5, tok6);
-  require(tok0 != tok1);
-  require(tok0 != tok2);
-  require(tok0 != tok3);
-  require(tok0 != tok4);
-  require(tok0 != tok5);
-  require(tok0 != tok6);
+  require(distinct(tok0, tok1, tok2, tok3, tok4, tok5, tok6))
   commit();
   return { tokens: [tok0, tok1, tok2, tok3, tok4, tok5, tok6] };
 };
@@ -325,21 +315,85 @@ export const requireTok6 = (A) => {
     const {
       tokens: [tok0, tok1, tok2, tok3, tok4, tok5],
     } = declassify(interact.getParams());
-    assume(tok0 != tok1);
-    assume(tok0 != tok2);
-    assume(tok0 != tok3);
-    assume(tok0 != tok4);
-    assume(tok0 != tok5);
+    assume(distinct(tok0, tok1, tok2, tok3, tok4, tok5))
   });
   A.publish(tok0, tok1, tok2, tok3, tok4, tok5);
-  require(tok0 != tok1);
-  require(tok0 != tok2);
-  require(tok0 != tok3);
-  require(tok0 != tok4);
-  require(tok0 != tok5);
+  require(distinct(tok0, tok1, tok2, tok3, tok4, tok5))
   commit();
   return { tokens: [tok0, tok1, tok2, tok3, tok4, tok5] };
 };
+export const requireTok6WithFloorAddr = (A) => {
+  A.only(() => {
+    const {
+      price,
+      addr,
+      tokens: [tok0, tok1, tok2, tok3, tok4, tok5],
+    } = declassify(interact.getParams());
+    assume(distinct(tok0, tok1, tok2, tok3, tok4, tok5))
+    assume(price > 0)
+  });
+  A.publish(tok0, tok1, tok2, tok3, tok4, tok5, price, addr);
+  require(distinct(tok0, tok1, tok2, tok3, tok4, tok5))
+  require(price > 0)
+  commit();
+  return { tokens: [tok0, tok1, tok2, tok3, tok4, tok5], price, addr };
+};
+export const requireTok6WithFloorAddrReward = (A) => {
+  A.only(() => {
+    const {
+      price,
+      addr,
+      reward,
+      tokens: [tok0, tok1, tok2, tok3, tok4, tok5],
+    } = declassify(interact.getParams());
+    assume(distinct(tok0, tok1, tok2, tok3, tok4, tok5))
+    assume(price > 0)
+    assume(reward > 0)
+  });
+  A.publish(tok0, tok1, tok2, tok3, tok4, tok5, price, addr, reward);
+  require(distinct(tok0, tok1, tok2, tok3, tok4, tok5))
+  require(price > 0)
+  require(reward > 0)
+  commit();
+  return { tokens: [tok0, tok1, tok2, tok3, tok4, tok5], price, addr, reward };
+};
+export const requireTok7WithFloorAddr = (A) => {
+  A.only(() => {
+    const {
+      price,
+      addr,
+      tokens: [tok0, tok1, tok2, tok3, tok4, tok5, tok6],
+    } = declassify(interact.getParams());
+    assume(distinct(tok0, tok1, tok2, tok3, tok4, tok5, tok6))
+    assume(price > 0)
+  });
+  A.publish(tok0, tok1, tok2, tok3, tok4, tok5, tok6, price, addr);
+  require(distinct(tok0, tok1, tok2, tok3, tok4, tok5, tok6))
+  require(price > 0)
+  commit();
+  return { tokens: [tok0, tok1, tok2, tok3, tok4, tok5, tok6], price, addr };
+};
+
+export const requireTok7WithFloorAddrReward = (A) => {
+  A.only(() => {
+    const {
+      price,
+      addr,
+      reward,
+      tokens: [tok0, tok1, tok2, tok3, tok4, tok5, tok6],
+    } = declassify(interact.getParams());
+    assume(distinct(tok0, tok1, tok2, tok3, tok4, tok5, tok6))
+    assume(price > 0)
+    assume(reward > 0)
+  });
+  A.publish(tok0, tok1, tok2, tok3, tok4, tok5, tok6, price, addr, reward);
+  require(distinct(tok0, tok1, tok2, tok3, tok4, tok5, tok6))
+  require(price > 0)
+  require(reward > 0)
+  commit();
+  return { tokens: [tok0, tok1, tok2, tok3, tok4, tok5, tok6], price, addr, reward };
+};
+
 export const requireTok5 = (A) => {
   A.only(() => {
     const {

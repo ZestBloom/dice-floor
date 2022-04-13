@@ -3,3 +3,7 @@ reach
 .reach
 squares*
 rolls
+.DS_Store
+out
+permutations
+random

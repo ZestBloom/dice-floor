@@ -1,4 +1,10 @@
-API_ENDPOINT_TESTNET="https://algoapiv1.herokuapp.com"
+export REACH_VERSION=78dbf873 # v0.1.9-rc4
+#API_ENDPOINT_TESTNET="https://launcher.testnet.zestbloom.com"
+#API_ENDPOINT_TESTNET="https://pr-14.launcher.dev.zestbloom.com"
+#API_ENDPOINT_TESTNET="http://localhost:5001"
+#API_ENDPOINT_TESTNET="https://pr-30.launcher.dev.zestbloom.com"
+API_ENDPOINT_TESTNET="https://launcher.402c3faa.testnet.zestbloom.com"
+#API_ENDPOINT_TESTNET="https://launcher.402c3faa.zestbloom.com"
 TEMPLATE_NAME="lite"
 reset() {
 	test ! -d ".reach" || rm -rvf "${_}"
@@ -12,8 +18,8 @@ connector () {
         echo "console.log(JSON.stringify({ALGO:_ALGO, template: '${TEMPLATE_NAME}'}))"
 }
 compile () {
-        REACH_VERSION=0.1.7 ./reach compile ${infile:-index}.rsh --install-pkgs
-        REACH_VERSION=0.1.7 ./reach compile ${infile:-index}.rsh "${@}"
+        ./reach compile ${infile:-index}.rsh --install-pkgs
+        ./reach compile ${infile:-index}.rsh "${@}"
 }
 eject () {
         _ () {
@@ -37,7 +43,7 @@ v2-launch() {
 }
 v2-apps() {
   local plan_id="${1}"
-  curl -X POST "${API_ENDPOINT_TESTNET}/api/v2/apps" -H 'Content-Type: application/json' -d @<( plan )
+  curl -X GET "${API_ENDPOINT_TESTNET}/api/v2/apps" -H 'Content-Type: application/json' 
 }
 v2-verify() {
   local plan_id="${1}"
