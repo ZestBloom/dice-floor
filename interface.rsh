@@ -1,9 +1,9 @@
 "reach 0.1";
 "use strict";
 
-import { requireTok6WithFloorAddrReward, hasSignal } from "util.rsh";
+import { requireTok5WithFloorRewardDeadline, hasSignal } from "util.rsh";
 
-const T = 6; // TOTAL TOKENS
+const T = 4; // TOTAL TOKENS
 
 // -----------------------------------------------
 // Name: Interface Template
@@ -18,8 +18,7 @@ export const Participants = () => [
       [],
       Object({
         price: UInt,
-        tokens: Array(Token, T), // 6 tokens + 1 exchange token
-        addr: Address,
+        tokens: Array(Token, T + 1), // 6 tokens + 1 exchange token
         reward: UInt,
       })
     ),
@@ -33,7 +32,8 @@ export const Views = () => [
   View({
     price: UInt,
     remaining: UInt,
-    tokens: Tuple(Token, Token, Token, Token, Token, Token),
+    tokens: Tuple(Token, Token, Token, Token),
+    exchange: Token,
     next: Token,
   }),
 ];
@@ -41,29 +41,30 @@ export const Api = () => [
   API({
     touch: Fun([], Null),
     ppc: Fun([UInt], Null),
+    destroy: Fun([], Null),
   }),
 ];
 
 export const App = (map) => {
-  const [[addr, _, _], [Alice, Bob], [v], [a]] = map;
+  const [[addr, _, addr2], [Alice, Bob], [v], [a]] = map;
   const {
-    tokens: [tok0, tok1, tok2, tok3, tok4, tok5],
+    tokens: [tok0, tok1, tok2, tok3, tok4],
     price,
-    reward
-  } = requireTok6WithFloorAddrReward(Alice);
-  Alice.pay([
     reward,
-    [1, tok0],
-    [1, tok1],
-    [1, tok2],
-    [1, tok3],
-    [1, tok4],
-    [1, tok5],
-  ]);
+  } = requireTok5WithFloorRewardDeadline(Alice, addr2);
+  Alice.pay([reward, [1, tok0], [1, tok1], [1, tok2], [1, tok3]]).timeout(
+    relativeTime(10),
+    () => {
+      Anybody.publish();
+      commit();
+      exit();
+    }
+  );
   Alice.interact.signal();
   v.remaining.set(T);
-  v.tokens.set([tok0, tok1, tok2, tok3, tok4, tok5]);
+  v.tokens.set([tok0, tok1, tok2, tok3]);
   v.price.set(price);
+  v.exchange.set(tok4);
   const bs = lastConsensusSecs() % 4; // XXX
   const [as, next] = parallelReduce([
     0,
@@ -78,7 +79,7 @@ export const App = (map) => {
         return tok0;
       } else {
         // impossible
-        return tok0; // XXX 
+        return tok0; // XXX
       }
     })(),
   ])
@@ -89,9 +90,19 @@ export const App = (map) => {
     .invariant(balance() >= reward)
     .while(as < T)
     .api(
+      a.destroy,
+      () => assume(this == Alice),
+      () => [0, [0, tok4]],
+      (k) => {
+        require(this == Alice);
+        k(null);
+        return [T, next];
+      }
+    )
+    .api(
       a.ppc,
       (_) => assume(true),
-      (m) => m,
+      (m) => [m, [0, tok4]],
       (m, k) => {
         require(true);
         transfer(m).to(addr);
@@ -102,109 +113,106 @@ export const App = (map) => {
     .api(
       a.touch,
       () => assume(true),
-      () => price,
+      () => [price, [1, tok4]],
       (k) => {
         require(true);
         k(null);
         return [
           as + 1,
           (() => {
+            // -----------------------------------
+            // 1 2 3 0
+            // -----------------------------------
             if (as + T * bs == 0 + T * 0) {
               transfer(balance(tok1), tok1).to(this);
+              transfer(balance(tok4), tok4).to(Alice);
               transfer(price).to(Alice);
-              return tok5;
+              return tok2;
             } else if (as + T * bs == 1 + T * 0) {
-              transfer(balance(tok5), tok5).to(this);
+              transfer(balance(tok2), tok2).to(this);
+              transfer(balance(tok4), tok4).to(Alice);
               transfer(price).to(Alice);
               return tok3;
             } else if (as + T * bs == 2 + T * 0) {
               transfer(balance(tok3), tok3).to(this);
-              transfer(price).to(Alice);
-              return tok4;
-            } else if (as + T * bs == 3 + T * 0) {
-              transfer(balance(tok4), tok4).to(this);
-              transfer(price).to(Alice);
-              return tok2;
-            } else if (as + T * bs == 4 + T * 0) {
-              transfer(balance(tok2), tok2).to(this);
-              transfer(price).to(Alice);
-              return tok0; // XXX
-            } else if (as + T * bs == 5 + T * 0) {
-              transfer(balance(tok0), tok0).to(this);
+              transfer(balance(tok4), tok4).to(Alice);
               transfer(price).to(Alice);
               return tok0;
+            } else if (as + T * bs == 3 + T * 0) {
+              transfer(balance(tok0), tok0).to(this);
+              transfer(balance(tok4), tok4).to(Alice);
+              transfer(price).to(Alice);
+              return tok0;
+              // -----------------------------------
+              // 2 1 0 3
+              // -----------------------------------
             } else if (as + T * bs == 0 + T * 1) {
               transfer(balance(tok2), tok2).to(this);
+              transfer(balance(tok4), tok4).to(Alice);
               transfer(price).to(Alice);
-              return tok4;
+              return tok1;
             } else if (as + T * bs == 1 + T * 1) {
-              transfer(balance(tok4), tok4).to(this);
+              transfer(balance(tok1), tok1).to(this);
+              transfer(balance(tok4), tok4).to(Alice);
               transfer(price).to(Alice);
               return tok0;
             } else if (as + T * bs == 2 + T * 1) {
               transfer(balance(tok0), tok0).to(this);
-              transfer(price).to(Alice);
-              return tok5;
-            } else if (as + T * bs == 3 + T * 1) {
-              transfer(balance(tok5), tok5).to(this);
-              transfer(price).to(Alice);
-              return tok1;
-            } else if (as + T * bs == 4 + T * 1) {
-              transfer(balance(tok1), tok1).to(this);
+              transfer(balance(tok4), tok4).to(Alice);
               transfer(price).to(Alice);
               return tok3;
-            } else if (as + T * bs == 5 + T * 1) {
+            } else if (as + T * bs == 3 + T * 1) {
               transfer(balance(tok3), tok3).to(this);
+              transfer(balance(tok4), tok4).to(Alice);
               transfer(price).to(Alice);
               return tok0; // XXX
+              // -----------------------------------
+              // 0 3 1 2
+              // -----------------------------------
             } else if (as + T * bs == 0 + T * 2) {
               transfer(balance(tok0), tok0).to(this);
+              transfer(balance(tok4), tok4).to(Alice);
               transfer(price).to(Alice);
               return tok3;
             } else if (as + T * bs == 1 + T * 2) {
               transfer(balance(tok3), tok3).to(this);
+              transfer(balance(tok4), tok4).to(Alice);
               transfer(price).to(Alice);
               return tok1;
             } else if (as + T * bs == 2 + T * 2) {
               transfer(balance(tok1), tok1).to(this);
+              transfer(balance(tok4), tok4).to(Alice);
               transfer(price).to(Alice);
               return tok2;
             } else if (as + T * bs == 3 + T * 2) {
               transfer(balance(tok2), tok2).to(this);
-              transfer(price).to(Alice);
-              return tok5;
-            } else if (as + T * bs == 4 + T * 2) {
-              transfer(balance(tok5), tok5).to(this);
-              transfer(price).to(Alice);
-              return tok4;
-            } else if (as + T * bs == 5 + T * 2) {
-              transfer(balance(tok4), tok4).to(this);
+              transfer(balance(tok4), tok4).to(Alice);
               transfer(price).to(Alice);
               return tok0; // XXX
+              // -----------------------------------
+              // 0 2 1 3
+              // -----------------------------------
             } else if (as + T * bs == 0 + T * 3) {
               transfer(balance(tok0), tok0).to(this);
+              transfer(balance(tok4), tok4).to(Alice);
               transfer(price).to(Alice);
               return tok2;
             } else if (as + T * bs == 1 + T * 3) {
               transfer(balance(tok2), tok2).to(this);
+              transfer(balance(tok4), tok4).to(Alice);
               transfer(price).to(Alice);
-              return tok5;
+              return tok1;
             } else if (as + T * bs == 2 + T * 3) {
-              transfer(balance(tok5), tok5).to(this);
+              transfer(balance(tok1), tok1).to(this);
+              transfer(balance(tok4), tok4).to(Alice);
               transfer(price).to(Alice);
               return tok3;
             } else if (as + T * bs == 3 + T * 3) {
               transfer(balance(tok3), tok3).to(this);
+              transfer(balance(tok4), tok4).to(Alice);
               transfer(price).to(Alice);
-              return tok4;
-            } else if (as + T * bs == 4 + T * 3) {
-              transfer(balance(tok4), tok4).to(this);
-              transfer(price).to(Alice);
-              return tok1;
-            } else if (as + T * bs == 5 + T * 3) {
-              transfer(balance(tok1), tok1).to(this);
-              transfer(price).to(Alice);
-              return tok0; // XXX
+              return tok0;
+              // -----------------------------------
             } else {
               // impossible
               return tok0; // XXX
@@ -223,7 +231,6 @@ export const App = (map) => {
   transfer(balance(tok2), tok2).to(Alice);
   transfer(balance(tok3), tok3).to(Alice);
   transfer(balance(tok4), tok4).to(Alice);
-  transfer(balance(tok5), tok5).to(Alice);
   commit();
   exit();
 };

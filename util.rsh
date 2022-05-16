@@ -1,104 +1,103 @@
-'reach 0.1';
-'use strict'
+"reach 0.1";
+"use strict";
 // -----------------------------------------------
 // Name: Utilities
 // Author: Nicholas Shellabarger
 // Version: 0.0.5 - returns p v a array
 // Requires Reach v0.1.8
 // -----------------------------------------------
-export const max = ((a, b) => a > b ? a : b)
-export const min = (a, b) => a < b ? a : b
+export const max = (a, b) => (a > b ? a : b);
+export const min = (a, b) => (a < b ? a : b);
 export const common = {
-    ...hasConsoleLogger,
-    close: Fun([], Null)
-}
+  ...hasConsoleLogger,
+  close: Fun([], Null),
+};
 export const hasSignal = {
-  signal: Fun([], Null)
-}
-export const constructorInteract = ({
-    ...common,
-    ...hasSignal,
-    getParams: Fun([], Object({
+  signal: Fun([], Null),
+};
+export const constructorInteract = {
+  ...common,
+  ...hasSignal,
+  getParams: Fun(
+    [],
+    Object({
       addr: Address, // contract addr
       // activation params
       amt: UInt, // fee gate
-    })),
-    signal: Fun([], Null)
-  })
+    })
+  ),
+  signal: Fun([], Null),
+};
 export const relayInteract = {
-  ...common
-}
+  ...common,
+};
 export const construct = (Constructor, Verifier) => {
   Constructor.only(() => {
-    const {
-      addr,
-      amt,
-    } = declassify(interact.getParams())
-    assume(true)
-  })
-  Constructor
-    .publish(
-      addr,
-      amt
-    )
-  require(true)
-  Verifier.set(addr)
-  commit()
+    const { addr, amt } = declassify(interact.getParams());
+    assume(true);
+  });
+  Constructor.publish(addr, amt);
+  require(true);
+  Verifier.set(addr);
+  commit();
   Constructor.only(() => interact.signal());
   return {
-      addr,
-      amt,
-  }
-}
+    addr,
+    amt,
+  };
+};
 export const binaryFork = (A, B, addr, amt) => {
   fork()
-  .case(
-    A, 
-    (() => ({
-      msg: 1,
-      when: true
-    })),
-    ((_) => 0),
-    (v) => {
-      require(v == 1 && this == addr)
-      commit()
-      exit()
-    })
-  .case(
-    B, 
-    (() => ({
-      msg: 2,
-      when: true
-    })),
-    ((_) => amt),
-    (v) => {
-      require(v == 2)
-      transfer(amt).to(addr)
-      commit()
-    })
-  .timeout(false)
-}
+    .case(
+      A,
+      () => ({
+        msg: 1,
+        when: true,
+      }),
+      (_) => 0,
+      (v) => {
+        require(v == 1 && this == addr);
+        commit();
+        exit();
+      }
+    )
+    .case(
+      B,
+      () => ({
+        msg: 2,
+        when: true,
+      }),
+      (_) => amt,
+      (v) => {
+        require(v == 2);
+        transfer(amt).to(addr);
+        commit();
+      }
+    )
+    .timeout(false);
+};
 export const DefaultParticipants = () => [
-  Participant('Constructor', constructorInteract),
-  Participant('Verifier', relayInteract),
-  Participant('Contractee', relayInteract) 
-]
+  Participant("Constructor", constructorInteract),
+  Participant("Verifier", relayInteract),
+  Participant("Contractee", relayInteract),
+];
 export const verify = (Constructor, Verifier, Contractee) => {
-  const { 
-    addr, 
-    amt, 
-  } = construct(Constructor, Verifier)
-  binaryFork(Verifier, Contractee, addr, amt) 
-}
-export const useConstructor = (particpantFunc = () => {}, viewFunc = () => {}, apiFunc = () => {}) => {
-  const [Constructor, Verifier, Contractee] = DefaultParticipants()
-  const p = particpantFunc()
-  const v = viewFunc()
-  const a = apiFunc()
-  init()
-  verify(Constructor, Verifier, Contractee)
+  const { addr, amt } = construct(Constructor, Verifier);
+  binaryFork(Verifier, Contractee, addr, amt);
+};
+export const useConstructor = (
+  particpantFunc = () => {},
+  viewFunc = () => {},
+  apiFunc = () => {}
+) => {
+  const [Constructor, Verifier, Contractee] = DefaultParticipants();
+  const p = particpantFunc();
+  const v = viewFunc();
+  const a = apiFunc();
+  init();
+  verify(Constructor, Verifier, Contractee);
   return [p, v, a];
-}
+};
 export const depositTok7 = (A) => {
   A.only(() => {
     const {
@@ -152,15 +151,7 @@ export const depositTok6 = (A) => {
   require(tok0 != tok4);
   require(tok0 != tok5);
   commit();
-  A.pay([
-    0,
-    [1, tok0],
-    [1, tok1],
-    [1, tok2],
-    [1, tok3],
-    [1, tok4],
-    [1, tok5],
-  ]);
+  A.pay([0, [1, tok0], [1, tok1], [1, tok2], [1, tok3], [1, tok4], [1, tok5]]);
   commit();
   return { amount, tokens: [tok0, tok1, tok2, tok3, tok4, tok5] };
 };
@@ -181,14 +172,7 @@ export const depositTok5 = (A) => {
   require(tok0 != tok3);
   require(tok0 != tok4);
   commit();
-  A.pay([
-    0,
-    [1, tok0],
-    [1, tok1],
-    [1, tok2],
-    [1, tok3],
-    [1, tok4],
-  ]);
+  A.pay([0, [1, tok0], [1, tok1], [1, tok2], [1, tok3], [1, tok4]]);
   commit();
   return { amount, tokens: [tok0, tok1, tok2, tok3, tok4] };
 };
@@ -207,13 +191,7 @@ export const depositTok4 = (A) => {
   require(tok0 != tok2);
   require(tok0 != tok3);
   commit();
-  A.pay([
-    0,
-    [1, tok0],
-    [1, tok1],
-    [1, tok2],
-    [1, tok3],
-  ]);
+  A.pay([0, [1, tok0], [1, tok1], [1, tok2], [1, tok3]]);
   commit();
   return { amount, tokens: [tok0, tok1, tok2, tok3] };
 };
@@ -230,12 +208,7 @@ export const depositTok3 = (A) => {
   require(tok0 != tok1);
   require(tok0 != tok2);
   commit();
-  A.pay([
-    0,
-    [1, tok0],
-    [1, tok1],
-    [1, tok2],
-  ]);
+  A.pay([0, [1, tok0], [1, tok1], [1, tok2]]);
   commit();
   return { amount, tokens: [tok0, tok1, tok2] };
 };
@@ -250,11 +223,7 @@ export const depositTok2 = (A) => {
   A.publish(amount, tok0, tok1);
   require(tok0 != tok1);
   commit();
-  A.pay([
-    0,
-    [1, tok0],
-    [1, tok1],
-  ]);
+  A.pay([0, [1, tok0], [1, tok1]]);
   commit();
   return { amount, tokens: [tok0, tok1] };
 };
@@ -267,10 +236,7 @@ export const depositTok = (A) => {
   });
   A.publish(amount, tok0);
   commit();
-  A.pay([
-    0,
-    [1, tok0]
-  ]);
+  A.pay([0, [1, tok0]]);
   commit();
   return { amount, tokens: [tok0] };
 };
@@ -303,10 +269,10 @@ export const requireTok7 = (A) => {
     const {
       tokens: [tok0, tok1, tok2, tok3, tok4, tok5, tok6],
     } = declassify(interact.getParams());
-    assume(distinct(tok0, tok1, tok2, tok3, tok4, tok5, tok6))
+    assume(distinct(tok0, tok1, tok2, tok3, tok4, tok5, tok6));
   });
   A.publish(tok0, tok1, tok2, tok3, tok4, tok5, tok6);
-  require(distinct(tok0, tok1, tok2, tok3, tok4, tok5, tok6))
+  require(distinct(tok0, tok1, tok2, tok3, tok4, tok5, tok6));
   commit();
   return { tokens: [tok0, tok1, tok2, tok3, tok4, tok5, tok6] };
 };
@@ -315,10 +281,10 @@ export const requireTok6 = (A) => {
     const {
       tokens: [tok0, tok1, tok2, tok3, tok4, tok5],
     } = declassify(interact.getParams());
-    assume(distinct(tok0, tok1, tok2, tok3, tok4, tok5))
+    assume(distinct(tok0, tok1, tok2, tok3, tok4, tok5));
   });
   A.publish(tok0, tok1, tok2, tok3, tok4, tok5);
-  require(distinct(tok0, tok1, tok2, tok3, tok4, tok5))
+  require(distinct(tok0, tok1, tok2, tok3, tok4, tok5));
   commit();
   return { tokens: [tok0, tok1, tok2, tok3, tok4, tok5] };
 };
@@ -329,12 +295,12 @@ export const requireTok6WithFloorAddr = (A) => {
       addr,
       tokens: [tok0, tok1, tok2, tok3, tok4, tok5],
     } = declassify(interact.getParams());
-    assume(distinct(tok0, tok1, tok2, tok3, tok4, tok5))
-    assume(price > 0)
+    assume(distinct(tok0, tok1, tok2, tok3, tok4, tok5));
+    assume(price > 0);
   });
   A.publish(tok0, tok1, tok2, tok3, tok4, tok5, price, addr);
-  require(distinct(tok0, tok1, tok2, tok3, tok4, tok5))
-  require(price > 0)
+  require(distinct(tok0, tok1, tok2, tok3, tok4, tok5));
+  require(price > 0);
   commit();
   return { tokens: [tok0, tok1, tok2, tok3, tok4, tok5], price, addr };
 };
@@ -346,17 +312,46 @@ export const requireTok6WithFloorAddrReward = (A) => {
       reward,
       tokens: [tok0, tok1, tok2, tok3, tok4, tok5],
     } = declassify(interact.getParams());
-    assume(distinct(tok0, tok1, tok2, tok3, tok4, tok5))
-    assume(price > 0)
-    assume(reward > 0)
+    assume(distinct(tok0, tok1, tok2, tok3, tok4, tok5));
+    assume(price > 0);
+    assume(reward > 0);
   });
   A.publish(tok0, tok1, tok2, tok3, tok4, tok5, price, addr, reward);
-  require(distinct(tok0, tok1, tok2, tok3, tok4, tok5))
-  require(price > 0)
-  require(reward > 0)
+  require(distinct(tok0, tok1, tok2, tok3, tok4, tok5));
+  require(price > 0);
+  require(reward > 0);
   commit();
   return { tokens: [tok0, tok1, tok2, tok3, tok4, tok5], price, addr, reward };
 };
+
+export const requireTok5WithFloorRewardDeadline = (A, addr) => {
+  A.only(() => {
+    const {
+      price,
+      reward,
+      tokens: [tok0, tok1, tok2, tok3, tok4],
+    } = declassify(interact.getParams());
+    assume(distinct(tok0, tok1, tok2, tok3, tok4));
+    assume(price > 0);
+    assume(reward > 0);
+    assume(this == addr);
+  });
+  A.publish(tok0, tok1, tok2, tok3, tok4, price, reward).timeout(
+    relativeTime(10), // XXX
+    () => {
+      Anybody.publish();
+      commit();
+      exit();
+    }
+  );
+  require(distinct(tok0, tok1, tok2, tok3, tok4));
+  require(price > 0);
+  require(reward > 0);
+  require(A == addr);
+  commit();
+  return { tokens: [tok0, tok1, tok2, tok3, tok4], price, reward };
+};
+
 export const requireTok7WithFloorAddr = (A) => {
   A.only(() => {
     const {
@@ -364,12 +359,12 @@ export const requireTok7WithFloorAddr = (A) => {
       addr,
       tokens: [tok0, tok1, tok2, tok3, tok4, tok5, tok6],
     } = declassify(interact.getParams());
-    assume(distinct(tok0, tok1, tok2, tok3, tok4, tok5, tok6))
-    assume(price > 0)
+    assume(distinct(tok0, tok1, tok2, tok3, tok4, tok5, tok6));
+    assume(price > 0);
   });
   A.publish(tok0, tok1, tok2, tok3, tok4, tok5, tok6, price, addr);
-  require(distinct(tok0, tok1, tok2, tok3, tok4, tok5, tok6))
-  require(price > 0)
+  require(distinct(tok0, tok1, tok2, tok3, tok4, tok5, tok6));
+  require(price > 0);
   commit();
   return { tokens: [tok0, tok1, tok2, tok3, tok4, tok5, tok6], price, addr };
 };
@@ -382,16 +377,21 @@ export const requireTok7WithFloorAddrReward = (A) => {
       reward,
       tokens: [tok0, tok1, tok2, tok3, tok4, tok5, tok6],
     } = declassify(interact.getParams());
-    assume(distinct(tok0, tok1, tok2, tok3, tok4, tok5, tok6))
-    assume(price > 0)
-    assume(reward > 0)
+    assume(distinct(tok0, tok1, tok2, tok3, tok4, tok5, tok6));
+    assume(price > 0);
+    assume(reward > 0);
   });
   A.publish(tok0, tok1, tok2, tok3, tok4, tok5, tok6, price, addr, reward);
-  require(distinct(tok0, tok1, tok2, tok3, tok4, tok5, tok6))
-  require(price > 0)
-  require(reward > 0)
+  require(distinct(tok0, tok1, tok2, tok3, tok4, tok5, tok6));
+  require(price > 0);
+  require(reward > 0);
   commit();
-  return { tokens: [tok0, tok1, tok2, tok3, tok4, tok5, tok6], price, addr, reward };
+  return {
+    tokens: [tok0, tok1, tok2, tok3, tok4, tok5, tok6],
+    price,
+    addr,
+    reward,
+  };
 };
 
 export const requireTok7WithFloorReward = (A) => {
@@ -401,14 +401,14 @@ export const requireTok7WithFloorReward = (A) => {
       reward,
       tokens: [tok0, tok1, tok2, tok3, tok4, tok5, tok6],
     } = declassify(interact.getParams());
-    assume(distinct(tok0, tok1, tok2, tok3, tok4, tok5, tok6))
-    assume(price > 0)
-    assume(reward > 0)
+    assume(distinct(tok0, tok1, tok2, tok3, tok4, tok5, tok6));
+    assume(price > 0);
+    assume(reward > 0);
   });
   A.publish(tok0, tok1, tok2, tok3, tok4, tok5, tok6, price, reward);
-  require(distinct(tok0, tok1, tok2, tok3, tok4, tok5, tok6))
-  require(price > 0)
-  require(reward > 0)
+  require(distinct(tok0, tok1, tok2, tok3, tok4, tok5, tok6));
+  require(price > 0);
+  require(reward > 0);
   commit();
   return { tokens: [tok0, tok1, tok2, tok3, tok4, tok5, tok6], price, reward };
 };
@@ -476,7 +476,7 @@ export const requireTok2 = (A) => {
 export const requireTok = (A) => {
   A.only(() => {
     const {
-      tokens: [tok0]
+      tokens: [tok0],
     } = declassify(interact.getParams());
   });
   A.publish(tok0);
