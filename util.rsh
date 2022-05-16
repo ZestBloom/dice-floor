@@ -394,6 +394,25 @@ export const requireTok7WithFloorAddrReward = (A) => {
   return { tokens: [tok0, tok1, tok2, tok3, tok4, tok5, tok6], price, addr, reward };
 };
 
+export const requireTok7WithFloorReward = (A) => {
+  A.only(() => {
+    const {
+      price,
+      reward,
+      tokens: [tok0, tok1, tok2, tok3, tok4, tok5, tok6],
+    } = declassify(interact.getParams());
+    assume(distinct(tok0, tok1, tok2, tok3, tok4, tok5, tok6))
+    assume(price > 0)
+    assume(reward > 0)
+  });
+  A.publish(tok0, tok1, tok2, tok3, tok4, tok5, tok6, price, reward);
+  require(distinct(tok0, tok1, tok2, tok3, tok4, tok5, tok6))
+  require(price > 0)
+  require(reward > 0)
+  commit();
+  return { tokens: [tok0, tok1, tok2, tok3, tok4, tok5, tok6], price, reward };
+};
+
 export const requireTok5 = (A) => {
   A.only(() => {
     const {

@@ -1,3 +1,4 @@
+.env
 build
 reach
 .reach
@@ -7,3 +8,4 @@ rolls
 out
 permutations
 random
+test.sh

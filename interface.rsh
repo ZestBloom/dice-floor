@@ -45,11 +45,10 @@ export const Api = () => [
 ];
 
 export const App = (map) => {
-  const [[Alice, Bob], [v], [a]] = map;
+  const [[addr, _, _], [Alice, Bob], [v], [a]] = map;
   const {
     tokens: [tok0, tok1, tok2, tok3, tok4, tok5],
     price,
-    addr,
     reward
   } = requireTok6WithFloorAddrReward(Alice);
   Alice.pay([
