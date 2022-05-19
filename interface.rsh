@@ -1,7 +1,7 @@
 "reach 0.1";
 "use strict";
 
-import { requireTok5WithFloorRewardDeadline, hasSignal } from "util.rsh";
+import { requireTok5WithFloorDeadline, hasSignal } from "util.rsh";
 
 const T = 4; // TOTAL TOKENS
 
@@ -30,9 +30,11 @@ export const Participants = () => [
 ];
 export const Views = () => [
   View({
+    manager: Address,
     price: UInt,
     remaining: UInt,
     tokens: Tuple(Token, Token, Token, Token),
+    participants: Tuple(Address, Address, Address, Address),
     exchange: Token,
     next: Token,
   }),
@@ -45,13 +47,15 @@ export const Api = () => [
   }),
 ];
 
+const reward = 1000000; // XXX
+const take = 2000000; // XXX
+
 export const App = (map) => {
   const [[addr, _, addr2], [Alice, Bob], [v], [a]] = map;
   const {
     tokens: [tok0, tok1, tok2, tok3, tok4],
-    price,
-    reward,
-  } = requireTok5WithFloorRewardDeadline(Alice, addr2);
+    price
+  } = requireTok5WithFloorDeadline(Alice, addr2);
   Alice.pay([reward, [1, tok0], [1, tok1], [1, tok2], [1, tok3]]).timeout(
     relativeTime(10),
     () => {
@@ -60,13 +64,16 @@ export const App = (map) => {
       exit();
     }
   );
+  Bob.set(Alice); // REM it doesn't work if Bob is not Alice anyway
   Alice.interact.signal();
+  v.manager.set(Alice);
   v.remaining.set(T);
   v.tokens.set([tok0, tok1, tok2, tok3]);
   v.price.set(price);
   v.exchange.set(tok4);
+  v.participants.set([Alice, Alice, Alice, Alice]);
   const bs = lastConsensusSecs() % 4; // XXX
-  const [as, next] = parallelReduce([
+  const [as, next, lst] = parallelReduce([
     0,
     (() => {
       if (bs == 0) {
@@ -82,10 +89,12 @@ export const App = (map) => {
         return tok0; // XXX
       }
     })(),
+    Array.replicate(4, addr)
   ])
     .define(() => {
       v.remaining.set(T - as);
       v.next.set(next);
+      v.participants.set([lst[0], lst[1], lst[2], lst[3]]);
     })
     .invariant(balance() >= reward)
     .while(as < T)
@@ -96,7 +105,7 @@ export const App = (map) => {
       (k) => {
         require(this == Alice);
         k(null);
-        return [T, next];
+        return [T, next, lst];
       }
     )
     .api(
@@ -107,15 +116,15 @@ export const App = (map) => {
         require(true);
         transfer(m).to(addr);
         k(null);
-        return [as, next];
+        return [as, next, lst];
       }
     )
     .api(
       a.touch,
-      () => assume(true),
-      () => [price, [1, tok4]],
+      () => assume(!Array.includes(lst, this)),
+      () => [price+take, [1, tok4]],
       (k) => {
-        require(true);
+        require(!Array.includes(lst, this));
         k(null);
         return [
           as + 1,
@@ -126,21 +135,25 @@ export const App = (map) => {
             if (as + T * bs == 0 + T * 0) {
               transfer(balance(tok1), tok1).to(this);
               transfer(balance(tok4), tok4).to(Alice);
+              transfer(take).to(addr);
               transfer(price).to(Alice);
               return tok2;
             } else if (as + T * bs == 1 + T * 0) {
               transfer(balance(tok2), tok2).to(this);
               transfer(balance(tok4), tok4).to(Alice);
+              transfer(take).to(addr);
               transfer(price).to(Alice);
               return tok3;
             } else if (as + T * bs == 2 + T * 0) {
               transfer(balance(tok3), tok3).to(this);
               transfer(balance(tok4), tok4).to(Alice);
+              transfer(take).to(addr);
               transfer(price).to(Alice);
               return tok0;
             } else if (as + T * bs == 3 + T * 0) {
               transfer(balance(tok0), tok0).to(this);
               transfer(balance(tok4), tok4).to(Alice);
+              transfer(take).to(addr);
               transfer(price).to(Alice);
               return tok0;
               // -----------------------------------
@@ -149,21 +162,25 @@ export const App = (map) => {
             } else if (as + T * bs == 0 + T * 1) {
               transfer(balance(tok2), tok2).to(this);
               transfer(balance(tok4), tok4).to(Alice);
+              transfer(take).to(addr);
               transfer(price).to(Alice);
               return tok1;
             } else if (as + T * bs == 1 + T * 1) {
               transfer(balance(tok1), tok1).to(this);
               transfer(balance(tok4), tok4).to(Alice);
+              transfer(take).to(addr);
               transfer(price).to(Alice);
               return tok0;
             } else if (as + T * bs == 2 + T * 1) {
               transfer(balance(tok0), tok0).to(this);
               transfer(balance(tok4), tok4).to(Alice);
+              transfer(take).to(addr);
               transfer(price).to(Alice);
               return tok3;
             } else if (as + T * bs == 3 + T * 1) {
               transfer(balance(tok3), tok3).to(this);
               transfer(balance(tok4), tok4).to(Alice);
+              transfer(take).to(addr);
               transfer(price).to(Alice);
               return tok0; // XXX
               // -----------------------------------
@@ -172,21 +189,25 @@ export const App = (map) => {
             } else if (as + T * bs == 0 + T * 2) {
               transfer(balance(tok0), tok0).to(this);
               transfer(balance(tok4), tok4).to(Alice);
+              transfer(take).to(addr);
               transfer(price).to(Alice);
               return tok3;
             } else if (as + T * bs == 1 + T * 2) {
               transfer(balance(tok3), tok3).to(this);
               transfer(balance(tok4), tok4).to(Alice);
+              transfer(take).to(addr);
               transfer(price).to(Alice);
               return tok1;
             } else if (as + T * bs == 2 + T * 2) {
               transfer(balance(tok1), tok1).to(this);
               transfer(balance(tok4), tok4).to(Alice);
+              transfer(take).to(addr);
               transfer(price).to(Alice);
               return tok2;
             } else if (as + T * bs == 3 + T * 2) {
               transfer(balance(tok2), tok2).to(this);
               transfer(balance(tok4), tok4).to(Alice);
+              transfer(take).to(addr);
               transfer(price).to(Alice);
               return tok0; // XXX
               // -----------------------------------
@@ -195,21 +216,25 @@ export const App = (map) => {
             } else if (as + T * bs == 0 + T * 3) {
               transfer(balance(tok0), tok0).to(this);
               transfer(balance(tok4), tok4).to(Alice);
+              transfer(take).to(addr);
               transfer(price).to(Alice);
               return tok2;
             } else if (as + T * bs == 1 + T * 3) {
               transfer(balance(tok2), tok2).to(this);
               transfer(balance(tok4), tok4).to(Alice);
+              transfer(take).to(addr);
               transfer(price).to(Alice);
               return tok1;
             } else if (as + T * bs == 2 + T * 3) {
               transfer(balance(tok1), tok1).to(this);
               transfer(balance(tok4), tok4).to(Alice);
+              transfer(take).to(addr);
               transfer(price).to(Alice);
               return tok3;
             } else if (as + T * bs == 3 + T * 3) {
               transfer(balance(tok3), tok3).to(this);
               transfer(balance(tok4), tok4).to(Alice);
+              transfer(take).to(addr);
               transfer(price).to(Alice);
               return tok0;
               // -----------------------------------
@@ -218,6 +243,7 @@ export const App = (map) => {
               return tok0; // XXX
             }
           })(),
+          Array.set(lst, as, this)
         ];
       }
     )
