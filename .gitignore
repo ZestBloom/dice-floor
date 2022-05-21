@@ -7,3 +7,5 @@ rolls
 out
 permutations
 random
+.env
+*.sh
