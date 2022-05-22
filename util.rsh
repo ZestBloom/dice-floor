@@ -349,7 +349,6 @@ export const requireTok4WithFloorDeadline = (A, addr) => {
   return { tokens: [tok0, tok1, tok2, tok3], price };
 };
 
-
 export const requireTok5WithFloorDeadline = (A, addr) => {
   A.only(() => {
     const {
@@ -373,6 +372,31 @@ export const requireTok5WithFloorDeadline = (A, addr) => {
   require(A == addr);
   commit();
   return { tokens: [tok0, tok1, tok2, tok3, tok4], price };
+};
+
+export const requireTok6WithFloorDeadline = (A, addr) => {
+  A.only(() => {
+    const {
+      price,
+      tokens: [tok0, tok1, tok2, tok3, tok4, tok5],
+    } = declassify(interact.getParams());
+    assume(distinct(tok0, tok1, tok2, tok3, tok4, tok5));
+    assume(price > 0);
+    assume(this == addr);
+  });
+  A.publish(tok0, tok1, tok2, tok3, tok4, tok5, price).timeout(
+    relativeTime(10), // XXX
+    () => {
+      Anybody.publish();
+      commit();
+      exit();
+    }
+  );
+  require(distinct(tok0, tok1, tok2, tok3, tok4, tok5));
+  require(price > 0);
+  require(A == addr);
+  commit();
+  return { tokens: [tok0, tok1, tok2, tok3, tok4, tok5], price };
 };
 
 export const requireTok7WithFloorAddr = (A) => {
