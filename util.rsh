@@ -324,6 +324,32 @@ export const requireTok6WithFloorAddrReward = (A) => {
   return { tokens: [tok0, tok1, tok2, tok3, tok4, tok5], price, addr, reward };
 };
 
+export const requireTok4WithFloorDeadline = (A, addr) => {
+  A.only(() => {
+    const {
+      price,
+      tokens: [tok0, tok1, tok2, tok3],
+    } = declassify(interact.getParams());
+    assume(distinct(tok0, tok1, tok2, tok3));
+    assume(price > 0);
+    assume(this == addr);
+  });
+  A.publish(tok0, tok1, tok2, tok3, price).timeout(
+    relativeTime(10), // XXX
+    () => {
+      Anybody.publish();
+      commit();
+      exit();
+    }
+  );
+  require(distinct(tok0, tok1, tok2, tok3));
+  require(price > 0);
+  require(A == addr);
+  commit();
+  return { tokens: [tok0, tok1, tok2, tok3], price };
+};
+
+
 export const requireTok5WithFloorDeadline = (A, addr) => {
   A.only(() => {
     const {
