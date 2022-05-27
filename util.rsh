@@ -379,12 +379,13 @@ export const requireTok6WithFloorDeadline = (A, addr) => {
     const {
       price,
       tokens: [tok0, tok1, tok2, tok3, tok4, tok5],
+      //ctcEvent
     } = declassify(interact.getParams());
     assume(distinct(tok0, tok1, tok2, tok3, tok4, tok5));
     assume(price > 0);
     assume(this == addr);
   });
-  A.publish(tok0, tok1, tok2, tok3, tok4, tok5, price).timeout(
+  A.publish(tok0, tok1, tok2, tok3, tok4, tok5, price/*, ctcEvent*/).timeout(
     relativeTime(10), // XXX
     () => {
       Anybody.publish();
@@ -396,7 +397,7 @@ export const requireTok6WithFloorDeadline = (A, addr) => {
   require(price > 0);
   require(A == addr);
   commit();
-  return { tokens: [tok0, tok1, tok2, tok3, tok4, tok5], price };
+  return { tokens: [tok0, tok1, tok2, tok3, tok4, tok5], price/*, ctcEvent*/ };
 };
 
 export const requireTok7WithFloorAddr = (A) => {
