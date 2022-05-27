@@ -20,7 +20,7 @@ export const Participants = () => [
         price: UInt,
         tokens: Array(Token, T), // 6 tokens
         reward: UInt,
-        //ctcEvent: Contract
+        ctcEvent: Contract
       })
     ),
     ...hasSignal,
@@ -56,7 +56,7 @@ export const App = (map) => {
   const {
     tokens: [tok0, tok1, tok2, tok3, tok4, tok5],
     price,
-    //ctcEvent
+    ctcEvent
   } = requireTok6WithFloorDeadline(Alice, addr2);
   Alice.pay([
     reward + price / 1000000, // store price in balance
@@ -73,6 +73,9 @@ export const App = (map) => {
   });
   Bob.set(Alice); // REM it doesn't work if Bob is not Alice anyway
   Alice.interact.signal();
+  const r = remote(ctcEvent, {
+    incr: Fun([], Null)
+  });
   v.manager.set(Alice);
   v.remaining.set(T);
   v.tokens.set([tok0, tok1, tok2, tok3, tok4, tok5]);
@@ -120,6 +123,7 @@ export const App = (map) => {
       (_) => 0,
       (m, k) => {
         require(m < T && lst[m % T] == this && this != addr);
+        r.incr();
         k(null);
         // -----------------------------------
         // 1 2 3 0 4 5
