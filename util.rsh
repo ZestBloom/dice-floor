@@ -379,7 +379,7 @@ export const requireTok6WithFloorDeadline = (A, addr) => {
     const {
       price,
       tokens: [tok0, tok1, tok2, tok3, tok4, tok5],
-      ctcEvent
+      ctcEvent,
     } = declassify(interact.getParams());
     assume(distinct(tok0, tok1, tok2, tok3, tok4, tok5));
     assume(price > 0);
@@ -398,6 +398,70 @@ export const requireTok6WithFloorDeadline = (A, addr) => {
   require(A == addr);
   commit();
   return { tokens: [tok0, tok1, tok2, tok3, tok4, tok5], price, ctcEvent };
+};
+
+export const requireTok6WithPriceDeadline = (A, addr) => {
+  A.only(() => {
+    const {
+      prices: [prc0, prc1, prc2, prc3, prc4, prc5],
+      tokens: [tok0, tok1, tok2, tok3, tok4, tok5],
+      addrs,
+      distr,
+      royaltyCap,
+    } = declassify(interact.getParams());
+    assume(distinct(tok0, tok1, tok2, tok3, tok4, tok5));
+    assume(prc0 > 0);
+    assume(prc1 > 0);
+    assume(prc2 > 0);
+    assume(prc3 > 0);
+    assume(prc4 > 0);
+    assume(prc5 > 0);
+    assume(this == addr);
+    assume(distr.sum() <= royaltyCap);
+    //assume(royaltyCap == (10 * floorPrice) / 1000000);
+  });
+  A.publish(
+    tok0,
+    tok1,
+    tok2,
+    tok3,
+    tok4,
+    tok5,
+    prc0,
+    prc1,
+    prc2,
+    prc3,
+    prc4,
+    prc5,
+    addrs,
+    distr,
+    royaltyCap
+  ).timeout(
+    relativeTime(10), // XXX
+    () => {
+      Anybody.publish();
+      commit();
+      exit();
+    }
+  );
+  require(distinct(tok0, tok1, tok2, tok3, tok4, tok5));
+  require(prc0 > 0);
+  require(prc1 > 0);
+  require(prc2 > 0);
+  require(prc3 > 0);
+  require(prc4 > 0);
+  require(prc5 > 0);
+  require(A == addr);
+  require(distr.sum() <= royaltyCap);
+  //require(royaltyCap == (10 * floorPrice) / 1000000);
+  commit();
+  return {
+    tokens: [tok0, tok1, tok2, tok3, tok4, tok5],
+    prices: [prc0, prc1, prc2, prc3, prc4, prc5],
+    addrs,
+    distr,
+    royaltyCap
+  };
 };
 
 export const requireTok7WithFloorAddr = (A) => {

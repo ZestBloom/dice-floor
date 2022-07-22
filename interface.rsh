@@ -1,9 +1,15 @@
 "reach 0.1";
 "use strict";
 
-import { requireTok6WithFloorDeadline, hasSignal } from "util.rsh";
+import { requireTok6WithPriceDeadline, hasSignal } from "util.rsh";
 
 const T = 6; // TOTAL TOKENS
+const SERIAL_VER = 0;
+const DIST_LENGTH = 10;
+const FEE_RELAY = 1000000;
+const reward = 1000000; // XXX
+// TODO calculate reward as max(2000000, price/100)
+const take = 2000000; // XXX
 
 // -----------------------------------------------
 // Name: Interface Template
@@ -13,26 +19,29 @@ const T = 6; // TOTAL TOKENS
 // Requires Reach v0.1.7 (stable)
 // ----------------------------------------------
 export const Participants = () => [
-  Participant("Alice", {
+  Participant("Manager", {
     getParams: Fun(
       [],
       Object({
-        price: UInt,
+        prices: Array(UInt, T), // 6 prices
         tokens: Array(Token, T), // 6 tokens
-        reward: UInt,
-        ctcEvent: Contract,
+        reward: UInt, // ??
+        //ctcEvent: Contract, // app info for register api
+        addrs: Array(Address, DIST_LENGTH),
+        distr: Array(UInt, DIST_LENGTH),
+        royaltyCap: UInt,
       })
     ),
     ...hasSignal,
   }),
-  Participant("Bob", {
+  ParticipantClass("Relay", {
     ...hasSignal,
   }),
 ];
 export const Views = () => [
   View({
     manager: Address,
-    price: UInt,
+    prices: Tuple(UInt, UInt, UInt, UInt, UInt, UInt),
     remaining: UInt,
     tokens: Tuple(Token, Token, Token, Token, Token, Token),
     participants: Tuple(Address, Address, Address, Address, Address, Address),
@@ -44,23 +53,23 @@ export const Api = () => [
     touch: Fun([], Null),
     destroy: Fun([], Null),
     //claim: Fun([UInt], Null),
-    register: Fun([], Null),
+    //register: Fun([], Null),
   }),
 ];
 
-const reward = 1000000; // XXX
-// TODO calculate reward as max(2000000, price/100)
-const take = 2000000; // XXX
+
 
 export const App = (map) => {
-  const [[addr, _, addr2], [Alice, Bob], [v], [a]] = map;
+  const [[addr, _, addr2], [Manager, Relay], [v], [a]] = map;
   const {
     tokens: [tok0, tok1, tok2, tok3, tok4, tok5],
-    price,
-    ctcEvent,
-  } = requireTok6WithFloorDeadline(Alice, addr2);
-  Alice.pay([
-    reward + price / 1000000, // store price in balance
+    prices: [prc0, prc1, prc2, prc3, prc4, prc5],
+    addrs,
+    distr,
+    royaltyCap,
+  } = requireTok6WithPriceDeadline(Manager, addr2);
+  Manager.pay([
+    reward + SERIAL_VER + FEE_RELAY, // with serial version
     [1, tok0],
     [1, tok1],
     [1, tok2],
@@ -72,16 +81,18 @@ export const App = (map) => {
     commit();
     exit();
   });
-  Bob.set(Alice); // REM it doesn't work if Bob is not Alice anyway
-  Alice.interact.signal();
+  //Relay.set(Manager); // REM it doesn't work if Relay is not Alice anyway
+  Manager.interact.signal();
+  /*
   const r = remote(ctcEvent, {
     incr: Fun([], Null),
   });
-  v.manager.set(Alice);
+  */
+  v.manager.set(Manager);
   v.remaining.set(T);
   v.tokens.set([tok0, tok1, tok2, tok3, tok4, tok5]);
-  v.price.set(price);
-  v.participants.set([Alice, Alice, Alice, Alice, Alice, Alice]);
+  v.prices.set([prc0, prc1, prc2, prc3, prc4, prc5]);
+  v.participants.set([Manager, Manager, Manager, Manager, Manager, Manager]);
   const bs = lastConsensusSecs() % 2; // XXX
   const [keepGoing, as, cs, next, lst] = parallelReduce([
     true,
@@ -104,138 +115,94 @@ export const App = (map) => {
       v.next.set(next);
       v.participants.set([lst[0], lst[1], lst[2], lst[3], lst[4], lst[5]]);
     })
-    .invariant(balance() >= reward)
+    .invariant(balance() >= reward + FEE_RELAY + SERIAL_VER)
     .while(keepGoing)
-    // Alice can register
-    .api(
-      a.register,
-      () => assume(this == Alice),
-      () => 0,
-      (k) => {
-        require(this == Alice);
-        r.incr();
-        k(null);
-        return [true, as, bs, next, lst];
-      }
-    )
-    // Alice can destroy pack
+    // Manager can destroy pack
     .api(
       a.destroy,
-      () => assume(this == Alice),
+      () => assume(this == Manager),
       () => 0,
       (k) => {
-        require(this == Alice);
+        require(this == Manager);
         k(null);
         return [false, as, bs, next, lst];
       }
     )
-    // Participants can claim token
-    /*
-    .api(
-      a.claim,
-      (m) => assume(m < T && lst[m % T] == this && this != addr),
-      (_) => 0,
-      (m, k) => {
-        require(m < T && lst[m % T] == this && this != addr);
-        r.incr();
-        k(null);
-        // -----------------------------------
-        // 1 2 3 0 4 5
-        // -----------------------------------
-        if (bs == 0) {
-          if (m % T == 0) {
-            transfer(balance(tok1), tok1).to(this);
-          } else if (m % T == 1) {
-            transfer(balance(tok2), tok2).to(this);
-          } else if (m % T == 2) {
-            transfer(balance(tok3), tok3).to(this);
-          } else if (m % T == 3) {
-            transfer(balance(tok0), tok0).to(this);
-          } else if (m % T == 4) {
-            transfer(balance(tok4), tok4).to(this);
-          } else if (m % T == 5) {
-            transfer(balance(tok5), tok5).to(this);
-          }
-        }
-        // -----------------------------------
-        // 2 1 0 3 4 5
-        // -----------------------------------
-        else if (bs == 1) {
-          if (m % T == 0) {
-            transfer(balance(tok2), tok2).to(this);
-          } else if (m % T == 1) {
-            transfer(balance(tok1), tok1).to(this);
-          } else if (m % T == 2) {
-            transfer(balance(tok0), tok0).to(this);
-          } else if (m % T == 3) {
-            transfer(balance(tok3), tok3).to(this);
-          } else if (m % T == 4) {
-            transfer(balance(tok4), tok4).to(this);
-          } else if (m % T == 5) {
-            transfer(balance(tok5), tok5).to(this);
-          }
-        }
-        return [true, as, bs + 1, next, lst];
-      }
-    )
-    */
     // Anyone can touch the pack
     .api(
       a.touch,
       () => assume(as < T && !Array.includes(lst, this)),
-      () => price + take,
+      () =>
+        ((ds) => {
+          if (ds == 0) {
+            return prc0;
+          } else if (ds == 1) {
+            return prc1;
+          } else if (ds == 2) {
+            return prc2;
+          } else if (ds == 3) {
+            return prc3;
+          } else if (ds == 4) {
+            return prc4;
+          } else if (ds == 5) {
+            return prc5;
+          } else {
+            // impossible
+            return prc0;
+          }
+        })(as), // + take,
       (k) => {
         require(as < T && !Array.includes(lst, this));
         k(null);
-        transfer(take).to(addr);
-        transfer(price).to(Alice);
+        /*
+        const price = ((ds) => {
+          if (ds == 0) {
+            return prc0;
+          } else if (ds == 1) {
+            return prc1;
+          } else if (ds == 2) {
+            return prc2;
+          } else if (ds == 3) {
+            return prc3;
+          } else if (ds == 4) {
+            return prc4;
+          } else if (ds == 5) {
+            return prc5;
+          } else {
+            // impossible
+            return prc0;
+          }
+        })(as);
+        */
+        //transfer(take).to(addr);
+        //transfer(price).to(Manager);
         return [
           true,
           as + 1,
           cs,
           (() => {
             // -----------------------------------
-            // 1 2 3 0 4 5
+            // 0 1 2 3 4 5
             // -----------------------------------
             if (as + T * bs == 0 + T * 0) {
-              transfer(balance(tok1), tok1).to(this);
-              return tok2;
+              //transfer(balance(tok0), tok0).to(this);
+              return tok1;
             } else if (as + T * bs == 1 + T * 0) {
-              transfer(balance(tok2), tok2).to(this);
-              return tok3;
+              //transfer(balance(tok1), tok1).to(this);
+              return tok2;
             } else if (as + T * bs == 2 + T * 0) {
-              transfer(balance(tok3), tok3).to(this);
-              return tok0;
+              //transfer(balance(tok2), tok2).to(this);
+              return tok3;
             } else if (as + T * bs == 3 + T * 0) {
-              transfer(balance(tok0), tok0).to(this);
+              //transfer(balance(tok3), tok3).to(this);
               return tok4;
             } else if (as + T * bs == 4 + T * 0) {
-              transfer(balance(tok4), tok4).to(this);
+              //transfer(balance(tok4), tok4).to(this);
               return tok5;
             } else if (as + T * bs == 5 + T * 0) {
-              transfer(balance(tok5), tok5).to(this);
-              return tok0; // XXX
-              // -----------------------------------
-              // 2 1 0 3 4 5
-              // -----------------------------------
-            } else if (as + T * bs == 0 + T * 1) {
-              transfer(balance(tok2), tok2).to(this);
-              return tok1;
-            } else if (as + T * bs == 1 + T * 1) {
-              transfer(balance(tok1), tok1).to(this);
+              //transfer(balance(tok5), tok5).to(this);
               return tok0;
-            } else if (as + T * bs == 2 + T * 1) {
-              transfer(balance(tok0), tok0).to(this);
-              return tok3;
-            } else if (as + T * bs == 3 + T * 1) {
-              transfer(balance(tok3), tok3).to(this);
-              return tok4;
-            } else if (as + T * bs == 4 + T * 1) {
-              transfer(balance(tok4), tok4).to(this);
-              return tok5;
-            } else if (as + T * bs == 5 + T * 1) {
-              transfer(balance(tok5), tok5).to(this);
-              return tok0; // XXX
+              // -----------------------------------
             } else {
               // impossible
               return tok0; // XXX
@@ -247,15 +214,43 @@ export const App = (map) => {
     )
     .timeout(false);
   commit();
-  Bob.publish(); // bob must be alice
-  Bob.only(() => interact.signal());
-  transfer(balance()).to(Bob); // 1000000
-  transfer(balance(tok0), tok0).to(Alice);
-  transfer(balance(tok1), tok1).to(Alice);
-  transfer(balance(tok2), tok2).to(Alice);
-  transfer(balance(tok3), tok3).to(Alice);
-  transfer(balance(tok4), tok4).to(Alice);
-  transfer(balance(tok5), tok5).to(Alice);
+  // Step: split payment
+  Relay.publish();
+  const total = balance()//- reward - SERIAL_VER - FEE_RELAY;
+  const cent = total / 100;
+  const partTake = (total - cent) / royaltyCap;
+  //const distrTake = distr.slice(1, DIST_LENGTH - 1).sum();
+  //const recvAmount = balance() - partTake * distrTake; // REM includes reward amount
+  transfer(partTake * distr[0]).to(addrs[0]);
+  transfer(partTake * distr[1]).to(addrs[1]);
+  transfer(partTake * distr[2]).to(addrs[2]);
+  transfer(partTake * distr[3]).to(addrs[3]);
+  commit();
+  Relay.publish();
+  transfer(partTake * distr[4]).to(addrs[4]);
+  transfer(partTake * distr[5]).to(addrs[5]);
+  transfer(partTake * distr[6]).to(addrs[6]);
+  transfer(partTake * distr[7]).to(addrs[7]);
+  commit();
+  Relay.only(() => {
+    const rAddr = this;
+    assume(this == Manager);
+  });
+  Relay.publish(rAddr); // bob must be alice
+  require(rAddr == Manager);
+  transfer(partTake * distr[8]).to(addrs[8]);
+  transfer(partTake * distr[9]).to(addrs[9]);
+  // Relay participant receives reward
+  //transfer(FEE_RELAY).to(rAddr);
+  commit();
+  Relay.publish();
+  transfer(balance()).to(Manager); // 1000000
+  transfer(balance(tok0), tok0).to(Manager);
+  transfer(balance(tok1), tok1).to(Manager);
+  transfer(balance(tok2), tok2).to(Manager);
+  transfer(balance(tok3), tok3).to(Manager);
+  transfer(balance(tok4), tok4).to(Manager);
+  transfer(balance(tok5), tok5).to(Manager);
   commit();
   exit();
 };
