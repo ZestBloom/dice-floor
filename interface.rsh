@@ -24,7 +24,7 @@ export const Participants = () => [
       [],
       Object({
         price: UInt,
-        reward: UInt,
+        //reward: UInt,
         //ctcEvent: Contract,
       })
     ),
