@@ -400,6 +400,30 @@ export const requireTok6WithFloorDeadline = (A, addr) => {
   return { tokens: [tok0, tok1, tok2, tok3, tok4, tok5], price, ctcEvent };
 };
 
+export const requirePriceDeadline = (A) => {
+  A.only(() => {
+    const {
+      price,
+      ctcEvent
+    } = declassify(interact.getParams());
+    assume(price > 0);
+    assume(this == addr);
+  });
+  A.publish(price, ctcEvent).timeout(
+    relativeTime(10), // XXX
+    () => {
+      Anybody.publish();
+      commit();
+      exit();
+    }
+  );
+  require(distinct(tok0, tok1, tok2, tok3, tok4, tok5));
+  require(price > 0);
+  require(A == addr);
+  commit();
+  return { tokens: [tok0, tok1, tok2, tok3, tok4, tok5], price, ctcEvent };
+};
+
 export const requireTok7WithFloorAddr = (A) => {
   A.only(() => {
     const {
